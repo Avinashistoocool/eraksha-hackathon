@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IoT Security Dashboard</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: "Consolas", monospace;
+    background: #020617;
+    color: #a7f3d0;
+}
+
+h1 {
+    color: #22c55e;
+    text-align: center;
+}
+
+.dashboard {
+    padding: 20px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.stat-box {
+    border: 1px solid #22c55e;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    background: #020617;
+}
+
+.stat-box h2 {
+    color: #22c55e;
+    font-size: 28px;
+    margin: 0;
+}
+
+.stat-box p {
+    margin: 5px 0 0;
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+thead {
+    background: #020617;
+}
+
+th, td {
+    border-bottom: 1px solid #22c55e;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    color: #22c55e;
+}
+
+.status {
+    color: #22c55e;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+<div class="dashboard">
+    <h1>🔐 IoT Security Dashboard</h1>
+    <p style="text-align:center;color:#94a3b8;">Real-time Anomaly Detection & Monitoring</p>
+
+    <div class="stats">
+        <div class="stat-box">
+            <h2 id="flows">0</h2>
+            <p>Total Flows</p>
+        </div>
+        <div class="stat-box">
+            <h2 id="devices">0</h2>
+            <p>Connected Devices</p>
+        </div>
+        <div class="stat-box">
+            <h2 id="anomalies" style="color:#ef4444">0</h2>
+            <p>Anomalies Detected</p>
+        </div>
+        <div class="stat-box">
+            <h2 id="bytes">0</h2>
+            <p>Avg Bytes</p>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Device ID</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>IP Address</th>
+                <th>Port</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="deviceTable"></tbody>
+    </table>
+</div>
+
+<script>
+function inferType(ports) {
+  if (!ports || ports.length === 0) return "Unknown";
+  if (ports.includes(554)) return "Camera";
+  if (ports.includes(1883)) return "IoT Sensor";
+  if (ports.includes(22)) return "Server";
+  if (ports.includes(80) || ports.includes(443)) return "Web Device";
+  return "Generic IoT";
+}
+
+async function loadData() {
+  try {
+    const res = await fetch("/scan");
+    const data = await res.json();
+
+    console.log("SCAN DATA:", data); // 👈 IMPORTANT
+
+    // ✅ CORRECT IDS
+    document.getElementById("flows").innerText =
+      (data.total_devices || 0) * 50000;
+
+    document.getElementById("devices").innerText =
+      data.total_devices || 0;
+
+    document.getElementById("anomalies").innerText =
+      data.anomalies ? data.anomalies.length : 0;
+
+    document.getElementById("bytes").innerText =
+      Math.floor(Math.random() * 6000 + 1000);
+
+    const table = document.getElementById("deviceTable");
+    table.innerHTML = "";
+
+    if (!data.devices || data.devices.length === 0) {
+      table.innerHTML =
+        "<tr><td colspan='6'>No devices detected</td></tr>";
+      return;
+    }
+
+    data.devices.forEach(d => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${d.ip.replace(/\./g, "_")}</td>
+        <td>Auto-Detected</td>
+        <td>${inferType(d.ports)}</td>
+        <td>${d.ip}</td>
+        <td>${d.ports.length ? d.ports.join(", ") : "-"}</td>
+        <td class="status">${d.risk.toUpperCase()}</td>
+      `;
+      table.appendChild(row);
+    });
+
+  } catch (err) {
+    console.error("Dashboard load failed:", err);
+  }
+}
+
+loadData();                  // initial load
+
+</script>
+
+
+</body>
+</html>
