@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+.idea/
+__pycache__/
+*.pyc
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+agent_memory.json
+devices.json
+data/
+my_agent/.adk/
